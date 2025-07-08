@@ -121,7 +121,7 @@ const TourDetails = () => {
       onExited={() => setAnimating(false)}
       key={index}
     >
-      <img src={photo.secureUrl} alt={`Tour Image ${index + 1}`} style={{ width: '100%' }} />
+      <img src={photo.secureUrl} alt={`Tour ${index + 1}`} style={{ width: '100%' }} />
     </CarouselItem>
   ));
 
