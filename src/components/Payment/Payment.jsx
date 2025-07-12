@@ -43,8 +43,14 @@ const Payment = ({ tour, quantity, totalPrice, booking, user, handleOpenModal, d
           quantity: parseInt(quantity, 10),
           totalPrice,
           guests: userData,
+          user,
+          tourId: tour._id,
+          booking,
+          dni,
+          userData
         }),
       });
+
 
       if (!response.ok) throw new Error("Error al crear la preferencia de pago");
 
