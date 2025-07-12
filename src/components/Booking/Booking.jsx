@@ -205,9 +205,9 @@ const Booking = ({ tour, avgRating }) => {
                 <ListGroup>
                     <ListGroupItem className="border-0 px-0">
                         <h5 className="d-flex align-items-center gap-1">
-                            S/.{price} <i className="ri-close-line"></i> 1 persona
+                            S/.{price} <i className="ri-close-line"></i> {quantity} persona{quantity > 1 ? 's' : ''}
                         </h5>
-                        <span>S/.{price}</span>
+                        <span>S/.{totalAmount}</span>
                     </ListGroupItem>
                 </ListGroup>
 
