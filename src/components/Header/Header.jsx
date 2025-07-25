@@ -1,32 +1,49 @@
-import React, { useRef, useEffect, useContext } from "react";
-import { Container, Row, Button } from "reactstrap";
-import { NavLink, Link, useNavigate } from "react-router-dom";
+import React, { useRef, useEffect, useContext, useState } from "react";
+import {
+    Container,
+    Row,
+    Button,
+    Modal,
+    ModalHeader,
+    ModalBody,
+    TabContent,
+    TabPane,
+    Nav,
+    NavItem,
+    NavLink as TabNavLink,
+} from "reactstrap";
+import { NavLink as RouterNavLink, Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import classnames from "classnames";
 
 import logo from "../../assets/images/logo.png";
 import "./Header.css";
-
+import { BASE_URL } from "../../utils/config";
 import { AuthContext } from "./../../context/AuthContext";
 
+import ChangePasswordForm from "../Profile/ChangePasswordForm";
+import UserHistory from "../Profile/UserHistory";
+
 const nav__links = [
-    {
-        path: "/home",
-        display: "Inicio",
-    },
-    {
-        path: "/about",
-        display: "Acerca de",
-    },
-    {
-        path: "/tours",
-        display: "Tours",
-    },
-    {
-        path: "/Contact",
-        display: "Contacto",
-    },
+    { path: "/home", display: "Inicio" },
+    { path: "/about", display: "Acerca de" },
+    { path: "/tours", display: "Tours" },
+    { path: "/Contact", display: "Contacto" },
 ];
 
 const Header = () => {
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState("1");
+    const [bookingCount, setBookingCount] = useState(0);
+    const [reviewCount, setReviewCount] = useState(0);
+
+    const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
+    const toggleModal = () => setModalOpen(!modalOpen);
+    const toggleTab = (tab) => {
+        if (activeTab !== tab) setActiveTab(tab);
+    };
+
     const headerRef = useRef(null);
     const menuRef = useRef(null);
     const navigate = useNavigate();
@@ -37,8 +54,26 @@ const Header = () => {
         navigate("/");
     };
 
-    const stickyHeaderFunc = () => {
-        window.addEventListener("scroll", () => {
+    useEffect(() => {
+        const fetchUserStats = async () => {
+            if (modalOpen && user?._id) {
+                try {
+                    const [bookingRes, reviewRes] = await Promise.all([
+                        axios.get(`${BASE_URL}/booking/user/${user._id}/count`),
+                        axios.get(`${BASE_URL}/review/user/${user._id}`),
+                    ]);
+                    setBookingCount(bookingRes.data.count || 0);
+                    setReviewCount(reviewRes.data.data.length || 0);
+                } catch (error) {
+                    console.error("Error al obtener reservas o reseñas:", error);
+                }
+            }
+        };
+        fetchUserStats();
+    }, [modalOpen, user]);
+
+    useEffect(() => {
+        const stickyHeaderFunc = () => {
             if (
                 document.body.scrollTop > 80 ||
                 document.documentElement.scrollTop > 80
@@ -47,14 +82,11 @@ const Header = () => {
             } else {
                 headerRef.current.classList.remove("sticky__header");
             }
-        });
-    };
+        };
 
-    useEffect(() => {
-        stickyHeaderFunc();
-
-        return window.removeEventListener("scroll", stickyHeaderFunc);
-    });
+        window.addEventListener("scroll", stickyHeaderFunc);
+        return () => window.removeEventListener("scroll", stickyHeaderFunc);
+    }, []);
 
     const toggleMenu = () => menuRef.current.classList.toggle("show__menu");
 
@@ -62,44 +94,53 @@ const Header = () => {
         <header className="header" ref={headerRef}>
             <Container>
                 <Row>
-                    <nav
-                        className="wrapper d-flex 
-            align-items-center justify-content-between"
-                    >
-                        {/* ---------- logo ----------- */}
+                    <nav className="wrapper d-flex align-items-center justify-content-between">
                         <div className="logo">
-                            <img src={logo} alt="" />
+                            <img src={logo} alt="logo" />
                         </div>
-                        {/* ---------- logo end ----------- */}
 
-                        {/* ---------- menu start ----------- */}
                         <div className="navigation" ref={menuRef} onClick={toggleMenu}>
                             <ul className="menu d-flex align-items-center gap-5">
                                 {nav__links.map((item, index) => (
                                     <li className="nav__item" key={index}>
-                                        <NavLink
+                                        <RouterNavLink
                                             to={item.path}
-                                            className={(navClass) =>
-                                                navClass.isActive ? "active__link" : ""
+                                            className={({ isActive }) =>
+                                                isActive ? "active__link" : ""
                                             }
                                         >
-                                            {item.display}{" "}
-                                        </NavLink>
+                                            {item.display}
+                                        </RouterNavLink>
                                     </li>
                                 ))}
                             </ul>
                         </div>
-                        {/* ---------- menu end ----------- */}
 
                         <div className="nav__right d-flex align-items-center gap-4">
                             <div className="nav__btn d-flex align-items-center gap-4">
                                 {user ? (
-                                    <>
-                                        <h5 className="mb-0">{user.username}</h5>
-                                        <Button className="btn btn-dark" onClick={logout}>
-                                            Cerrar Session
-                                        </Button>
-                                    </>
+                                    <div
+                                        className="user-dropdown"
+                                        onMouseEnter={() => setDropdownOpen(true)}
+                                        onMouseLeave={() => setDropdownOpen(false)}
+                                    >
+                                        <h5 className="mb-0 user-name" style={{ cursor: "pointer", fontWeight: 600 }}>
+                                            {user.username} <i className="ri-arrow-down-s-line"></i>
+                                        </h5>
+                                        {dropdownOpen && (
+                                            <div className="dropdown-menu show">
+                                                <button className="dropdown-item" onClick={toggleModal}>
+                                                    Perfil
+                                                </button>
+                                                <button
+                                                    className="dropdown-item text-danger"
+                                                    onClick={logout}
+                                                >
+                                                    Cerrar Sesión
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : (
                                     <>
                                         <Button className="btn secondary__btn">
@@ -119,6 +160,91 @@ const Header = () => {
                     </nav>
                 </Row>
             </Container>
+
+            <Modal isOpen={modalOpen} toggle={toggleModal}>
+                <ModalHeader toggle={toggleModal}>Perfil de Usuario</ModalHeader>
+                <ModalBody>
+                    <Nav tabs>
+                        <NavItem>
+                            <TabNavLink
+                                className={classnames({ active: activeTab === "1" })}
+                                onClick={() => toggleTab("1")}
+                            >
+                                Perfil
+                            </TabNavLink>
+                        </NavItem>
+                        <NavItem>
+                            <TabNavLink
+                                className={classnames({ active: activeTab === "2" })}
+                                onClick={() => toggleTab("2")}
+                            >
+                                Cambiar Contraseña
+                            </TabNavLink>
+                        </NavItem>
+                        <NavItem>
+                            <TabNavLink
+                                className={classnames({ active: activeTab === "3" })}
+                                onClick={() => toggleTab("3")}
+                            >
+                                Historial
+                            </TabNavLink>
+                        </NavItem>
+                    </Nav>
+
+                    <TabContent activeTab={activeTab} className="mt-3">
+                        <TabPane tabId="1">
+                            <p><strong>Usuario:</strong> {user?.username}</p>
+                            <p><strong>Email:</strong> {user?.email}</p>
+
+                            {user?.isVerified ? (
+                                <span style={{ color: "green", fontWeight: 600 }}>
+                                    <i className="ri-checkbox-circle-line" /> Verificado
+                                </span>
+                            ) : (
+                                <>
+                                    <span style={{ color: "red", fontWeight: 600 }}>
+                                        <i className="ri-close-circle-line" /> No verificado
+                                    </span>
+                                    <Button
+                                        className="btn btn-warning mt-2"
+                                        style={{ fontWeight: 600 }} onClick={async () => {
+                                            try {
+                                                await axios.post(
+                                                    `${BASE_URL}/usermobile/resend-verification`,
+                                                    {},
+                                                    { withCredentials: true }
+                                                );
+                                                alert("Correo reenviado. Revisa tu bandeja.");
+                                                setTimeout(async () => {
+                                                    const res = await axios.get(`${BASE_URL}/usermobile/me`, {
+                                                        withCredentials: true,
+                                                    });
+                                                    dispatch({ type: "LOGIN_SUCCESS", payload: res.data });
+                                                }, 3000);
+                                            } catch {
+                                                alert("Error al reenviar correo.");
+                                            }
+                                        }}
+                                    >
+                                        Verificar correo
+                                    </Button>
+                                </>
+                            )}
+                        </TabPane>
+
+                        <TabPane tabId="2">
+                            <ChangePasswordForm />
+                        </TabPane>
+
+                        <TabPane tabId="3">
+                            <UserHistory
+                                bookingCount={bookingCount}
+                                reviewCount={reviewCount}
+                            />
+                        </TabPane>
+                    </TabContent>
+                </ModalBody>
+            </Modal>
         </header>
     );
 };

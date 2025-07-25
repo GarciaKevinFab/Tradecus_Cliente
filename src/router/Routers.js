@@ -1,5 +1,5 @@
-import React from "react"; 
-import {Routes, Route, Navigate} from 'react-router-dom';
+import React from "react";
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 import Home from './../pages/Home';
 import Tours from './../pages/Tours';
@@ -9,6 +9,7 @@ import Login from './../pages/Login';
 import Register from './../pages/Register';
 import SearchResultList from './../pages/SearchResultList';
 import ThankYou from "../pages/ThankYou";
+import EmailVerified from "../pages/EmailVerified";
 
 import About from "../pages/About";
 import GalleryPage from "../pages/Gallery";
@@ -22,11 +23,12 @@ const Routers = () => {
             <Route path='/tours' element={<Tours />} />
             <Route path='/contact' element={<Contact />} />
             <Route path='/tours/:id' element={<TourDetails />} />
-            <Route path='/login' element={<Login/>} />
+            <Route path='/login' element={<Login />} />
             <Route path='/register' element={<Register />} />
             <Route path='/gallery' element={<GalleryPage />} />
-            <Route path='/thank-you' element={<ThankYou/>} />
+            <Route path='/thank-you' element={<ThankYou />} />
             <Route path='/tours/search' element={<SearchResultList />} />
+            <Route path="/email-verified" element={<EmailVerified />} />
         </Routes>
     );
 };

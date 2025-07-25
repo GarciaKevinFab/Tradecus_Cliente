@@ -30,6 +30,7 @@ const TourDetails = () => {
     duration,
     maxGroupSize,
   } = tour || {};
+  const [reviewList, setReviewList] = useState([]);
 
   const photos = tour?.photos || [];
 
@@ -37,10 +38,10 @@ const TourDetails = () => {
   const [selectedRating, setSelectedRating] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const reviewsPerPage = 4;  // Cantidad de reseñas por página
-  const totalPages = Math.ceil(reviews?.length / reviewsPerPage);
+  const totalPages = Math.ceil(reviewList?.length / reviewsPerPage);
   const indexOfLastReview = currentPage * reviewsPerPage;
   const indexOfFirstReview = indexOfLastReview - reviewsPerPage;
-  const currentReviews = reviews?.slice(indexOfFirstReview, indexOfLastReview);
+  const currentReviews = reviewList?.slice(indexOfFirstReview, indexOfLastReview);
 
   const nextPage = () => setCurrentPage((prev) => (prev === totalPages ? prev : prev + 1));
   const prevPage = () => setCurrentPage((prev) => (prev === 1 ? prev : prev - 1));
@@ -58,13 +59,21 @@ const TourDetails = () => {
 
   const submitHandler = async (e) => {
     e.preventDefault();
-    const reviewText = reviewMsgRef.current.value;
+    const reviewText = reviewMsgRef.current.value.trim(); // Eliminamos espacios
+
+    if (!user) {
+      return handleOpenModal();
+    }
+
+    if (!selectedRating) {
+      return toast.error("Por favor, selecciona una calificación con estrellas.");
+    }
+
+    if (!reviewText) {
+      return toast.error("Por favor, escribe tu opinión.");
+    }
 
     try {
-      if (!user) {
-        return handleOpenModal();
-      }
-
       const reviewObj = {
         username: user?.username,
         reviewText,
@@ -85,15 +94,24 @@ const TourDetails = () => {
         return toast.error(result.message);
       }
 
-      window.location.reload();
+      setReviewList(prev => [result.data, ...prev]);
+
+      // Resetear el input y rating
+      reviewMsgRef.current.value = "";
+      setSelectedRating(null);
+
+      toast.success("¡Gracias por tu reseña!");
     } catch (err) {
       toast.error(err.message);
     }
   };
 
+
   useEffect(() => {
     window.scrollTo(0, 0);
+    setReviewList(tour?.reviews || []);
   }, [tour]);
+
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [animating, setAnimating] = useState(false);
