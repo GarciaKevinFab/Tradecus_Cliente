@@ -31,6 +31,15 @@ const Payment = ({ tour, quantity, totalPrice, booking, user, handleOpenModal, d
 
       toast.success('Validación correcta. Creando reserva...');
       setLoading(true);
+      console.log("Token usado:", user.token);
+      console.log("Datos enviados a booking:", {
+        ...booking,
+        tourName: tour.title,
+        tourType: booking.tourType || 'group',
+        userId: user._id,
+        userEmail: user.email,
+        userData
+      });
 
       // PRIMERO: Crear el booking en la BD
       const bookingRes = await fetch(`${BASE_URL}/booking`, {
@@ -39,7 +48,9 @@ const Payment = ({ tour, quantity, totalPrice, booking, user, handleOpenModal, d
           "Content-Type": "application/json",
           "Authorization": `Bearer ${user.token}`  // <--- Este es el fix
         },
+
         body: JSON.stringify({
+
           ...booking,
           tourName: tour.title,
           tourType: booking.tourType || 'group',
