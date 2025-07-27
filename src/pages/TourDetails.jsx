@@ -84,10 +84,11 @@ const TourDetails = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${user.token}` // <--- Agrega esto
         },
-        credentials: "include",
         body: JSON.stringify(reviewObj),
       });
+
 
       const result = await res.json();
       if (!res.ok) {
