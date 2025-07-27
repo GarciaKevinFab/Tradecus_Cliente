@@ -18,17 +18,24 @@ const ChangePasswordForm = () => {
             return;
         }
 
+        const user = JSON.parse(localStorage.getItem('user')); // o desde AuthContext
+
         try {
             const res = await axios.post(
                 `${BASE_URL}/usermobile/change-password`,
                 { currentPassword, newPassword },
-                { withCredentials: true }
+                {
+                    headers: {
+                        Authorization: `Bearer ${user.token}`
+                    }
+                }
             );
             setMessage(res.data.message);
         } catch (err) {
             setMessage(err.response?.data?.message || "Error al cambiar la contraseña");
         }
     };
+
 
     return (
         <form onSubmit={handleSubmit}>
