@@ -52,9 +52,16 @@ const Login = () => {
             if (!res.ok) {
                 toast.error(result.message);
             } else {
-                dispatch({ type: "LOGIN_SUCCESS", payload: result.data });
+                dispatch({
+                    type: "LOGIN_SUCCESS",
+                    payload: {
+                        ...result.data,    // los datos del usuario
+                        token: result.token // el JWT que te da el backend
+                    }
+                });
                 navigate("/");
             }
+
 
         } catch (err) {
             toast.error(err.message);
