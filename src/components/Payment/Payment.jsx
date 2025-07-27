@@ -36,9 +36,9 @@ const Payment = ({ tour, quantity, totalPrice, booking, user, handleOpenModal, d
       const bookingRes = await fetch(`${BASE_URL}/booking`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${user.token}`  // <--- Este es el fix
         },
-        credentials: 'include',
         body: JSON.stringify({
           ...booking,
           tourName: tour.title,
@@ -48,6 +48,7 @@ const Payment = ({ tour, quantity, totalPrice, booking, user, handleOpenModal, d
           userData
         })
       });
+
 
       const bookingData = await bookingRes.json();
 
