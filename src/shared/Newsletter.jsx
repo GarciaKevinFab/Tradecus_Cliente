@@ -4,27 +4,38 @@ import axios from 'axios';
 import { Container, Row, Col } from 'reactstrap';
 import maleTourist from '../assets/images/male-tourist.png';
 import { BASE_URL } from "../utils/config";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Newsletter = () => {
     const [email, setEmail] = useState('');
-    const [message, setMessage] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
+        // Validación de email básica
+        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!email || !emailRegex.test(email)) {
+            toast.error("Por favor ingresa un correo válido.");
+            return;
+        }
+
+        setLoading(true);
+
         try {
             await axios.post(`${BASE_URL}/subscribe`, { email });
-            setMessage('¡Gracias por suscribirte!');
+            toast.success('¡Gracias por suscribirte!');
             setEmail('');
         } catch (error) {
             if (error.response && error.response.status === 400) {
-                // Si el correo ya está suscrito, el servidor debería devolver un mensaje adecuado
-                setMessage(error.response.data.message);
+                toast.error(error.response.data.message || 'Este correo ya está suscrito.');
             } else {
-                setMessage('Algo salió mal. Inténtalo de nuevo.');
+                toast.error('Algo salió mal. Inténtalo de nuevo.');
             }
+        } finally {
+            setLoading(false);
         }
-        
     };
 
     return (
@@ -43,20 +54,20 @@ const Newsletter = () => {
                                         placeholder='Ingrese su email'
                                         value={email}
                                         onChange={e => setEmail(e.target.value)}
+                                        disabled={loading}
                                     />
-                                    <button className="btn newsletter__btn" type="submit">Suscribir</button>
+                                    <button className="btn newsletter__btn" type="submit" disabled={loading}>
+                                        {loading ? "Enviando..." : "Suscribir"}
+                                    </button>
                                 </form>
                             </div>
-                            {message && <p className="newsletter__message">{message}</p>}
                         </div>
                     </Col>
-
                     <Col lg='6'>
                         <div className="newsletter__img">
                             <img src={maleTourist} alt="" />
                         </div>
                     </Col>
-
                 </Row>
             </Container>
         </section>

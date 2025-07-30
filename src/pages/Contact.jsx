@@ -6,16 +6,13 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Contact = () => {
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
-
-  const [showMessage, setShowMessage] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setShowMessage(false);
 
     // Validaciones
     if (!name || !email || !message) {
@@ -30,25 +27,32 @@ const Contact = () => {
       return;
     }
 
-    const response = await fetch(`${BASE_URL}/contact`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, email, message }),
-    });
+    setIsLoading(true);
 
-    const data = await response.json();
+    try {
+      const response = await fetch(`${BASE_URL}/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, message }),
+      });
 
-    if (response.ok) {
-      // Aquí puedes manejar una respuesta exitosa (por ejemplo, mostrar un mensaje de éxito)
-      toast.success(data.message);
-    } else {
-      // Aquí puedes manejar una respuesta de error (por ejemplo, mostrar un mensaje de error)
-      toast.error(data.message);
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message || "Mensaje enviado con éxito. ¡Gracias!");
+        setName("");
+        setEmail("");
+        setMessage("");
+      } else {
+        toast.error(data.message || "No se pudo enviar el mensaje, inténtalo de nuevo.");
+      }
+    } catch (err) {
+      toast.error("Error de red. Intenta más tarde.");
+    } finally {
+      setIsLoading(false);
     }
-
   };
+
   return (
     <section className="contact">
       <Container>
@@ -65,22 +69,41 @@ const Contact = () => {
               <form className="contact__form" onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label htmlFor="name">Nombre</label>
-                  <input type="text" id="name" required onChange={(e) => setName(e.target.value)} />
+                  <input
+                    type="text"
+                    id="name"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isLoading}
+                  />
                 </div>
                 <div className="form-group">
                   <label htmlFor="email">Correo electrónico</label>
-                  <input type="email" id="email" required onChange={(e) => setEmail(e.target.value)} />
+                  <input
+                    type="email"
+                    id="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                  />
                 </div>
                 <div className="form-group">
                   <label htmlFor="message">Mensaje</label>
-                  <textarea id="message" rows="4" required onChange={(e) => setMessage(e.target.value)}></textarea>
+                  <textarea
+                    id="message"
+                    rows="4"
+                    required
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    disabled={isLoading}
+                  ></textarea>
                 </div>
-                <button className="contact__submit" type="submit">
-                  Enviar mensaje
+                <button className="contact__submit" type="submit" disabled={isLoading}>
+                  {isLoading ? "Enviando..." : "Enviar mensaje"}
                 </button>
-                {showMessage && <div style={{ color: 'green', marginTop: '20px' }}>Tu mensaje ha sido enviado con éxito. Nos pondremos en contacto contigo pronto.</div>}
               </form>
-
             </div>
           </Col>
           <Col lg="6">

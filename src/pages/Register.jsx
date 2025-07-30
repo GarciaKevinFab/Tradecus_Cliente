@@ -11,32 +11,56 @@ import 'react-toastify/dist/ReactToastify.css';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const Register = () => {
-
     const [credentials, setCredentials] = useState({
-        username: undefined,
-        email: undefined,
-        password: undefined
+        username: "",
+        email: "",
+        password: ""
     });
+    const [loading, setLoading] = useState(false);
 
     const { dispatch } = useContext(AuthContext);
     const navigate = useNavigate();
+
+    const [passwordShown, setPasswordShown] = useState(false);
+    const togglePasswordVisibility = () => setPasswordShown(!passwordShown);
 
     const handleChange = e => {
         setCredentials(prev => ({ ...prev, [e.target.id]: e.target.value }));
     };
 
-    const [passwordShown, setPasswordShown] = useState(false);
-
-    const togglePasswordVisibility = () => {
-        setPasswordShown(passwordShown ? false : true);
-    };
-
     const handleClick = async e => {
         e.preventDefault();
 
+        // Validaciones front-end: vacíos
+        if (!credentials.username || !credentials.email || !credentials.password) {
+            toast.error("Todos los campos son obligatorios.");
+            return;
+        }
+
+        // Validación de email
+        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(credentials.email)) {
+            toast.error("Por favor, ingresa un correo válido.");
+            return;
+        }
+
+        // Validación de contraseña fuerte (mínimo 6 caracteres)
+        if (credentials.password.length < 6) {
+            toast.error("La contraseña debe tener al menos 6 caracteres.");
+            return;
+        }
+
+        // Validación de username decente
+        if (credentials.username.length < 3) {
+            toast.error("El nombre de usuario debe tener al menos 3 caracteres.");
+            return;
+        }
+
+        setLoading(true);
+
         try {
             const res = await fetch(`${BASE_URL}/usermobile/register`, {
-                method: 'post',
+                method: 'POST',
                 headers: {
                     'content-type': 'application/json',
                 },
@@ -46,22 +70,20 @@ const Register = () => {
             const result = await res.json();
 
             if (res.status === 400) {
-                // This is a duplicate user error
-                toast.error(result.message);
+                toast.error(result.message || "El nombre de usuario o correo electrónico ya existen.");
             } else if (!res.ok) {
-                // Other errors
-                toast.error("El nombre de usuario o correo electrónico ya existen.");
+                toast.error("Error al registrar. Intenta de nuevo.");
             } else {
-                // Success
                 dispatch({ type: "REGISTER_SUCCESS" });
+                toast.success("Usuario creado correctamente. Inicia sesión.");
                 navigate("/login");
             }
-
         } catch (err) {
-            toast.error("Ha ocurrido un error. Por favor intente de nuevo.");
+            toast.error("Ha ocurrido un error. Por favor intenta de nuevo.");
+        } finally {
+            setLoading(false);
         }
     };
-
 
     return (
         <section>
@@ -82,20 +104,51 @@ const Register = () => {
 
                                 <Form onSubmit={handleClick}>
                                     <FormGroup>
-                                        <input type="text" placeholder="Nombre de Usuraio" required id="username"
-                                            onChange={handleChange} />
+                                        <input
+                                            type="text"
+                                            placeholder="Nombre de Usuario"
+                                            required
+                                            id="username"
+                                            value={credentials.username}
+                                            onChange={handleChange}
+                                            disabled={loading}
+                                        />
                                     </FormGroup>
                                     <FormGroup>
-                                        <input type="email" placeholder="Email" required id="email"
-                                            onChange={handleChange} />
+                                        <input
+                                            type="email"
+                                            placeholder="Email"
+                                            required
+                                            id="email"
+                                            value={credentials.email}
+                                            onChange={handleChange}
+                                            disabled={loading}
+                                        />
                                     </FormGroup>
                                     <FormGroup className="position-relative">
-                                        <input type={passwordShown ? "text" : "password"} placeholder="Contraseña" required id="password" onChange={handleChange} className="form-control" />
-                                        <i onClick={togglePasswordVisibility} className="position-absolute top-50 end-0 translate-middle-y" style={{ cursor: 'pointer', marginRight: '10px' }}>{passwordShown ? <FaEye /> : <FaEyeSlash />}</i>
+                                        <input
+                                            type={passwordShown ? "text" : "password"}
+                                            placeholder="Contraseña"
+                                            required
+                                            id="password"
+                                            value={credentials.password}
+                                            onChange={handleChange}
+                                            className="form-control"
+                                            disabled={loading}
+                                        />
+                                        <i
+                                            onClick={togglePasswordVisibility}
+                                            className="position-absolute top-50 end-0 translate-middle-y"
+                                            style={{ cursor: 'pointer', marginRight: '10px' }}
+                                            tabIndex={0}
+                                            aria-label={passwordShown ? "Ocultar contraseña" : "Mostrar contraseña"}
+                                        >
+                                            {passwordShown ? <FaEye /> : <FaEyeSlash />}
+                                        </i>
                                     </FormGroup>
 
-                                    <Button className="btn secondary__btn auth__btn" type="submit">
-                                        Registrarte
+                                    <Button className="btn secondary__btn auth__btn" type="submit" disabled={loading}>
+                                        {loading ? "Registrando..." : "Registrarte"}
                                     </Button>
                                 </Form>
                                 <p>¿Ya tienes una cuenta? <Link to='/login'>Ingresar</Link></p>

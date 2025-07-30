@@ -10,36 +10,43 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
-
 const Login = () => {
-
     const [credentials, setCredentials] = useState({
-        email: undefined,
-        password: undefined
+        email: "",
+        password: ""
     });
-
+    const [loading, setLoading] = useState(false);
     const { dispatch } = useContext(AuthContext);
     const navigate = useNavigate();
+
+    const [passwordShown, setPasswordShown] = useState(false);
+    const togglePasswordVisibility = () => setPasswordShown(!passwordShown);
 
     const handleChange = e => {
         setCredentials(prev => ({ ...prev, [e.target.id]: e.target.value }));
     };
 
-    const [passwordShown, setPasswordShown] = useState(false);
-
-    const togglePasswordVisibility = () => {
-        setPasswordShown(passwordShown ? false : true);
-    };
-
     const handleClick = async e => {
         e.preventDefault();
 
-        dispatch({ type: 'LOGIN_START' })
+        if (!credentials.email || !credentials.password) {
+            toast.error("Todos los campos son obligatorios.");
+            return;
+        }
+
+        // Validación básica de email (no deja que el usuario meta basura)
+        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(credentials.email)) {
+            toast.error("Por favor, ingresa un correo válido.");
+            return;
+        }
+
+        setLoading(true);
+        dispatch({ type: 'LOGIN_START' });
 
         try {
-
             const res = await fetch(`${BASE_URL}/usermobile/login`, {
-                method: 'post',
+                method: 'POST',
                 headers: {
                     'content-type': 'application/json',
                 },
@@ -50,25 +57,26 @@ const Login = () => {
             const result = await res.json();
 
             if (!res.ok) {
-                toast.error(result.message);
+                toast.error(result.message || "Credenciales incorrectas.");
+                dispatch({ type: "LOGIN_FAILURE", payload: result.message });
             } else {
                 dispatch({
                     type: "LOGIN_SUCCESS",
                     payload: {
-                        ...result.data,    // los datos del usuario
-                        token: result.token // el JWT que te da el backend
+                        ...result.data,
+                        token: result.token
                     }
                 });
+                toast.success("Bienvenido 👋");
                 navigate("/");
             }
-
-
         } catch (err) {
-            toast.error(err.message);
+            toast.error("Error de conexión. Intenta más tarde.");
             dispatch({ type: "LOGIN_FAILURE", payload: err.message });
+        } finally {
+            setLoading(false);
         }
     };
-
 
     return (
         <section>
@@ -89,16 +97,40 @@ const Login = () => {
 
                                 <Form onSubmit={handleClick}>
                                     <FormGroup>
-                                        <input type="email" placeholder="Email" required id="email"
-                                            onChange={handleChange} />
+                                        <input
+                                            type="email"
+                                            placeholder="Email"
+                                            required
+                                            id="email"
+                                            value={credentials.email}
+                                            onChange={handleChange}
+                                            disabled={loading}
+                                        />
                                     </FormGroup>
                                     <FormGroup className="position-relative">
-                                        <input type={passwordShown ? "text" : "password"} placeholder="Contraseña" required id="password" onChange={handleChange} className="form-control" />
-                                        <i onClick={togglePasswordVisibility} className="position-absolute top-50 end-0 translate-middle-y" style={{ cursor: 'pointer', marginRight: '10px' }}>{passwordShown ? <FaEye /> : <FaEyeSlash />}</i>
+                                        <input
+                                            type={passwordShown ? "text" : "password"}
+                                            placeholder="Contraseña"
+                                            required
+                                            id="password"
+                                            value={credentials.password}
+                                            onChange={handleChange}
+                                            className="form-control"
+                                            disabled={loading}
+                                        />
+                                        <i
+                                            onClick={togglePasswordVisibility}
+                                            className="position-absolute top-50 end-0 translate-middle-y"
+                                            style={{ cursor: 'pointer', marginRight: '10px' }}
+                                            tabIndex={0}
+                                            aria-label={passwordShown ? "Ocultar contraseña" : "Mostrar contraseña"}
+                                        >
+                                            {passwordShown ? <FaEye /> : <FaEyeSlash />}
+                                        </i>
                                     </FormGroup>
 
-                                    <Button className="btn secondary__btn auth__btn" type="submit">
-                                        Ingresar
+                                    <Button className="btn secondary__btn auth__btn" type="submit" disabled={loading}>
+                                        {loading ? "Ingresando..." : "Ingresar"}
                                     </Button>
                                 </Form>
                                 <p>¿No tienes una cuenta? <Link to='/register'>Registrar</Link></p>
