@@ -50,14 +50,15 @@ const Payment = ({ tour, quantity, totalPrice, booking, user, handleOpenModal, d
         },
 
         body: JSON.stringify({
-
           ...booking,
           tourName: tour.title,
           tourType: booking.tourType || 'group',
           userId: user._id,
           userEmail: user.email,
-          userData
+          userData,
+          price: totalPrice,    // <-- AGREGA ESTO 🔥🔥🔥
         })
+
       });
 
 
