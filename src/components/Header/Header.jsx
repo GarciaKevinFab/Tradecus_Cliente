@@ -23,6 +23,7 @@ import { AuthContext } from "./../../context/AuthContext";
 
 import ChangePasswordForm from "../Profile/ChangePasswordForm";
 import UserHistory from "../Profile/UserHistory";
+import CustomModal from "../Profile/CustomModal"; // ¡Importa tu modal!
 
 const nav__links = [
     { path: "/home", display: "Inicio" },
@@ -38,16 +39,16 @@ const Header = () => {
     const [bookingCount, setBookingCount] = useState(0);
     const [reviewCount, setReviewCount] = useState(0);
 
-    const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
-    const toggleModal = () => setModalOpen(!modalOpen);
-    const toggleTab = (tab) => {
-        if (activeTab !== tab) setActiveTab(tab);
-    };
+    // NUEVO: Estado para la lista de reservas
+    const [bookingList, setBookingList] = useState([]);
+    const [selectedBooking, setSelectedBooking] = useState(null);
+    const [customModalOpen, setCustomModalOpen] = useState(false);
 
     const headerRef = useRef(null);
     const menuRef = useRef(null);
     const navigate = useNavigate();
     const { user, dispatch } = useContext(AuthContext);
+    const toggleModal = () => setModalOpen((prev) => !prev);
 
     const logout = () => {
         dispatch({ type: "LOGOUT" });
@@ -58,13 +59,18 @@ const Header = () => {
         const fetchUserStats = async () => {
             if (modalOpen && user?._id) {
                 try {
+                    // Cambia la petición: trae la lista completa de reservas
                     const [bookingRes, reviewRes] = await Promise.all([
-                        axios.get(`${BASE_URL}/booking/user/${user._id}/count`),
+                        axios.get(`${BASE_URL}/booking/user/${user._id}`),
                         axios.get(`${BASE_URL}/review/user/${user._id}`),
                     ]);
-                    setBookingCount(bookingRes.data.count || 0);
+                    setBookingCount(bookingRes.data.data.length || 0);
+                    setBookingList(bookingRes.data.data || []);
                     setReviewCount(reviewRes.data.data.length || 0);
                 } catch (error) {
+                    setBookingList([]);
+                    setBookingCount(0);
+                    setReviewCount(0);
                     console.error("Error al obtener reservas o reseñas:", error);
                 }
             }
@@ -168,7 +174,7 @@ const Header = () => {
                         <NavItem>
                             <TabNavLink
                                 className={classnames({ active: activeTab === "1" })}
-                                onClick={() => toggleTab("1")}
+                                onClick={() => setActiveTab("1")}
                             >
                                 Perfil
                             </TabNavLink>
@@ -176,7 +182,7 @@ const Header = () => {
                         <NavItem>
                             <TabNavLink
                                 className={classnames({ active: activeTab === "2" })}
-                                onClick={() => toggleTab("2")}
+                                onClick={() => setActiveTab("2")}
                             >
                                 Cambiar Contraseña
                             </TabNavLink>
@@ -184,7 +190,7 @@ const Header = () => {
                         <NavItem>
                             <TabNavLink
                                 className={classnames({ active: activeTab === "3" })}
-                                onClick={() => toggleTab("3")}
+                                onClick={() => setActiveTab("3")}
                             >
                                 Historial
                             </TabNavLink>
@@ -240,11 +246,26 @@ const Header = () => {
                             <UserHistory
                                 bookingCount={bookingCount}
                                 reviewCount={reviewCount}
+                                bookingList={bookingList}
+                                onBookingClick={(booking) => {
+                                    setSelectedBooking(booking);
+                                    setCustomModalOpen(true);
+                                }}
                             />
                         </TabPane>
                     </TabContent>
                 </ModalBody>
             </Modal>
+
+            <CustomModal
+                isOpen={customModalOpen}
+                onRequestClose={() => setCustomModalOpen(false)}
+                booking={selectedBooking}
+                onBookingDeleted={(deletedId) => {
+                    setBookingList((prev) => prev.filter((b) => b._id !== deletedId));
+                    setCustomModalOpen(false);
+                }}
+            />
         </header>
     );
 };
