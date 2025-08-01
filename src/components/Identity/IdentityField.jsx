@@ -15,46 +15,38 @@ const IdentityField = ({
     const [isValid, setIsValid] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // Cuando el usuario cambia el tipo de documento
     const handleTypeChange = (e) => {
         const updatedTypes = [...documentTypes];
         updatedTypes[index] = e.target.value;
         setDocumentTypes(updatedTypes);
         setIsValid(false);
-        // Limpiar el campo de documento al cambiar de tipo
         const updatedDni = [...dni];
         updatedDni[index] = "";
         setDni(updatedDni);
     };
 
-    // Cuando escribe en el input
     const handleChange = (e) => {
-        let value = e.target.value;
-        // Solo dejar números
-        value = value.replace(/\D/g, "");
+        let value = e.target.value.replace(/\D/g, "");
         const updatedDni = [...dni];
         updatedDni[index] = value;
         setDni(updatedDni);
         setIsValid(false);
     };
 
-    // Cuando sale del input
     const handleBlur = async () => {
         const value = dni[index];
         const type = documentTypes[index];
 
         if (!value) {
-            toast.warn("El campo no puede estar vacío.");
+            toast.warn("Por favor, ingresa el número de documento.", { autoClose: 2500 });
             return;
         }
-
         if (type === "dni" && value.length !== 8) {
-            toast.warn("El DNI debe tener 8 dígitos.");
+            toast.warn("El DNI debe contener 8 dígitos numéricos.", { autoClose: 2500 });
             return;
         }
-
         if (type === "carnet" && value.length !== 9) {
-            toast.warn("El Carnet debe tener 9 dígitos.");
+            toast.warn("El Carnet de Extranjería debe contener 9 dígitos numéricos.", { autoClose: 2500 });
             return;
         }
 
@@ -70,7 +62,7 @@ const IdentityField = ({
                     setIsValid(true);
                     toast.success(`✅ DNI ${value} validado correctamente.`, { autoClose: 2000 });
                 } else {
-                    toast.error("No se encontró información para ese DNI.");
+                    toast.error("No se encontró un registro válido para el DNI ingresado. Verifica el número e inténtalo nuevamente.", { autoClose: 3500 });
                     setIsValid(false);
                 }
             } else if (type === "carnet") {
@@ -86,15 +78,15 @@ const IdentityField = ({
                     setIsValid(true);
                     toast.success(`✅ Carnet ${value} validado correctamente.`, { autoClose: 2000 });
                 } else {
-                    toast.error("No se encontró información para ese Carnet.");
+                    toast.error("No se encontró un registro válido para el Carnet ingresado. Verifica el número e inténtalo nuevamente.", { autoClose: 3500 });
                     setIsValid(false);
                 }
             }
         } catch (err) {
             if (err.response) {
-                toast.error("La consulta falló. ¿El documento es válido? ¿La API está disponible?");
+                toast.error("No se pudo verificar el documento en este momento. Por favor, intenta más tarde.", { autoClose: 3500 });
             } else {
-                toast.error("Error de conexión. Verifica tu internet.");
+                toast.error("Error de conexión. Verifica tu acceso a internet e inténtalo nuevamente.", { autoClose: 3500 });
             }
             setIsValid(false);
         } finally {
