@@ -118,16 +118,33 @@ const Booking = ({ tour, avgRating }) => {
         }
     };
 
+    // ==============================
+    // MEJORA CLAVE: FECHA AUTOMÁTICA
+    // ==============================
     const handleBookAtChange = (e) => {
         const value = e.target.value;
         const date = new Date(value);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        if (isNaN(date) || date < today) {
-            toast.error('Por favor ingresa una fecha válida y futura.');
-            return;
+
+        // Chequea si el usuario seleccionó hoy
+        const isToday = date.toISOString().split("T")[0] === today.toISOString().split("T")[0];
+
+        // Hora actual en Perú
+        const now = new Date();
+        const afterNoon = now.getHours() >= 12;
+
+        let finalDate = value;
+
+        if (isToday && afterNoon) {
+            // Si intenta reservar para hoy y ya son más de las 12pm, cámbialo a mañana
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            finalDate = tomorrow.toISOString().split("T")[0];
+            toast.info("Ya no puedes reservar para hoy. Tu reserva será para mañana.");
         }
-        setBooking(prev => ({ ...prev, bookAt: value }));
+
+        setBooking(prev => ({ ...prev, bookAt: finalDate }));
         toast.success('Fecha válida seleccionada.');
     };
 
